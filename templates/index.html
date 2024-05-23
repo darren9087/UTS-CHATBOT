@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UTS Chatbot</title>
+    <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden; /* Hide page overflow */
+    }
+    body {
+      font-family: 'Times New Roman', Times, serif; /* Change font family */
+      background-image: url("{{ url_for('static', filename='background.jpg') }}"); /* Replace with your image path */
+      background-repeat: no-repeat; /* Optional: Control how the image repeats */
+      background-position: center; /* Optional: Control image placement */
+      background-size: cover; /* Optional: Control image size */
+      overflow-y: auto; /* Enable vertical scrolling */
+    }
+    /* Darken overlay for background image */
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)); /* Apply darken effect with gradient */
+      pointer-events: none; /* Ensure the overlay does not interfere with user interactions */
+      z-index: -1; /* Set a lower z-index to position the overlay behind other content */
+    }
+    h1 {
+      text-align: center;
+      color: white; /* Change text color to white */
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Add text shadow for better readability */
+    }
+    #chat-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 20px;
+      box-sizing: border-box; /* Include padding in height calculation */
+    }
+    #chat-wrapper {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 20px;
+    }
+    #user-input {
+      flex: 1;
+      margin-right: 10px;
+    }
+    #chat-history {
+  flex: 2;
+  max-height: 400px; /* Example fixed height */
+  overflow-y: auto; /* Enable vertical scrolling */
+}
+    #generate-form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    label {
+      font-weight: bold;
+    }
+    textarea {
+      width: 100%; /* Adjusted width to fill available space */
+      height: 50px; /* Reduced height */
+      margin-bottom: 20px; /* Increased bottom margin */
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      resize: none;
+      font-family: 'Times New Roman', Times, serif; /* Change font family */
+    }
+    button {
+      width: 100%; /* Adjusted width to fill available space */
+      background-color: #4caf50;
+      color: white;
+      padding: 10px 0;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #result-container {
+      width: 100%; /* Adjusted width to fill available space */
+      max-height: calc(100vh - 380px); /* Adjusted max-height */
+      overflow-y: auto; /* Enable vertical scrolling */
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #fff;
+      font-family: 'Times New Roman', Times, serif; 
+    }
+    /* Loading spinner styles */
+    .loader {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-left: 4px solid #4caf50; 
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Image styles */
+    img {
+      width: 150px;
+      height: 150px;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      margin: 10px;
+    }
+
+    /* Chat history message styles */
+    .chat-message {
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 5px;
+      background-color: #f2f2f2;
+      font-family: 'Times New Roman', Times, serif; /* Change font family */
+    }
+    .user-message {
+      text-align: right;
+    }
+    .bot-message {
+      text-align: left;
+    }
+    /* Text at the bottom */
+    #bottom-text {
+      background-color: rgba(0, 0, 0, 0.5);
+      color: white;
+      padding: 20px;
+      text-align: center;
+      box-sizing: border-box;
+      padding-bottom: 40px; /* Add bottom padding */
+      margin-bottom: 20px; /* Add margin to separate from the chat container */
+    }
+
+    /* Contact Information styles */
+    #contact-info {
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <img src="{{ url_for('static', filename='Professor.png') }}" alt="AI Assistant Professor">
+        <h1>UTS Chatbot</h1> 
+        <div id="chat-wrapper">
+            <div id="user-input">
+                <form id="generate-form">
+                    <label for="prompt">Enter Your Question or Prompt:</label><br>
+                    <textarea id="prompt" name="prompt" rows="2" class="chat-input"></textarea><br>
+                    <button type="submit">Generate Content</button>
+                    <div class="loader" id="loader" style="display: none;"></div>
+                </form>
+            </div>
+            <div id="chat-history"></div>
+        </div>
+    </div>
+
+    <!-- bottom text and contact information -->
+    <div id="bottom-text">
+        The University of Technology Sarawak (UTS), established in 2013, is located in Sibu, Sarawak, at the heart of Borneo. As a technological-focused institution, UTS aims to produce highly skilled graduates for emerging industries, particularly those related to the Sarawak Corridor of Renewable Energy (SCORE). Formerly known as the University College of Technology Sarawak (UCTS), UTS boasts Platinum ratings in the Green Building Index and offers a diverse range of industry-linked academic programs.
+    </div>
+
+    <div id="contact-info">
+        <h2>Contact Information</h2>
+        <p>1, Jalan University, 96000 Sibu, Sarawak</p>
+        <p>Phone: 084-367 300</p>
+        <p>Email: enquiry@uts.edu.my</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        function appendUserMessage(message) {
+            const chatHistoryContainer = document.getElementById('chat-history');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('chat-message', 'user-message');
+            messageElement.textContent = message;
+            chatHistoryContainer.appendChild(messageElement); // Append new message at the bottom
+            chatHistoryContainer.scrollTop = chatHistoryContainer.scrollHeight; // Scroll to bottom
+        }
+
+        function appendUserMessage(message) {
+        const chatHistoryContainer = document.getElementById('chat-history');
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('chat-message', 'user-message');
+        messageElement.textContent = message;
+        chatHistoryContainer.appendChild(messageElement); // Append new message at the bottom
+        chatHistoryContainer.scrollTop = chatHistoryContainer.scrollHeight; // Scroll to bottom
+    }
+
+    function appendBotMessage(message) {
+        console.log("Original message:", message); // Debugging line
+        const chatHistoryContainer = document.getElementById('chat-history');
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('chat-message', 'bot-message');
+
+        // Check if the message contains "DAIM:"
+        const prefixIndex = message.indexOf('DAIM:');
+        if (prefixIndex !== -1) {
+            // Remove the prefix and any characters before it
+            message = message.substring(prefixIndex + 'DAIM:'.length).trim();
+        }
+
+        console.log("Processed message:", message); // Debugging line
+
+        // Remove leading spaces from each line
+        const sanitizedMessage = message.split('\n').map(line => line.trim()).join('\n');
+
+        // Convert Markdown to HTML
+        const messageHtml = marked.parse(sanitizedMessage);
+        console.log("Message HTML:", messageHtml); // Debugging line
+
+        // Create a div to hold the HTML content
+        const messageContent = document.createElement('div');
+        messageContent.innerHTML = messageHtml;
+        messageElement.appendChild(messageContent);
+
+        chatHistoryContainer.appendChild(messageElement); // Append new message at the bottom
+        chatHistoryContainer.scrollTop = chatHistoryContainer.scrollHeight; // Scroll to bottom
+    }
+
+
+        const form = document.getElementById('generate-form');
+        const promptTextarea = document.getElementById('prompt');
+        const loader = document.getElementById('loader');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent form submission
+
+            const formData = new FormData(form);
+            const userPrompt = formData.get('prompt');
+
+            loader.style.display = 'block'; // Show loader
+
+            const response = await fetch('/generate', {
+                method: 'POST',
+                body: new URLSearchParams(formData)
+            });
+
+            if (response.ok) {
+                const generatedContent = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(generatedContent, 'text/html');
+                const botResponse = doc.body.textContent || "";
+                appendUserMessage(userPrompt);
+                appendBotMessage(botResponse);
+                promptTextarea.value = ''; // Clear input field
+            } else {
+                const resultContainer = document.getElementById('chat-history');
+                resultContainer.innerHTML = '<p>Failed to generate content. Please try again later.</p>';
+            }
+
+            loader.style.display = 'none'; // Hide loader
+        });
+
+        promptTextarea.addEventListener('keydown', (event) => {
+            if (event.keyCode === 13 && !event.shiftKey) {
+                event.preventDefault();
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+    </script>
+</body>
+</html>
+
+

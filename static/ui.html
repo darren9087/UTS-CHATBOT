@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>UTS CHATTING AI</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <style>
+            body, h1, h2, h3, h4, h5, h6 {
+                font-family: "Montserrat", sans-serif;
+            }
+    
+            .w3-row-padding img {
+                margin-bottom: 12px;
+            }
+    
+            .w3-sidebar {
+                width: 120px;
+                background: #222;
+            }
+    
+            #main {
+                margin-left: 120px;
+            }
+    
+            @media only screen and (max-width: 600px) {
+                #main {
+                    margin-left: 0;
+                }
+            }
+    
+            /* Chat Section Styling */
+            #chat-container {
+                padding: 20px;
+                max-width: 1500px;
+                margin: 20px auto;
+                background-color: #333;
+                border-radius: 10px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+                overflow-y: auto; /* Enable vertical scrolling */
+                max-height: 1000px; /* Set a height limit for chat messages */
+            }
+
+            .chatmessages{
+                padding: 15px;
+            }
+            
+            #user-input-container {
+                position: fixed; /* Keep this container fixed at the bottom */
+                bottom: 0; /* Position it at the bottom of the viewport */
+                width: 100%; /* Full width */
+                background-color: #333;
+                padding: 10px;
+                display: flex; /* Flex layout for input and button */
+                justify-content: center; /* Center elements horizontally */
+            }
+    
+            #user-input {
+                width: calc(100% - 20px);
+                padding: 10px;
+                margin: 10px 0;
+                background-color: #444;
+                border: none;
+                color: #fff;
+                border-radius: 5px;
+            }
+    
+            .send-button {
+                padding: 10px;
+                background-color: #555;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                margin-left: 10px; /* Add space between input and button */
+            }
+    
+            .chat-message {
+                padding: 10px;
+                background-color: #444;
+                border-radius: 5px;
+                margin-bottom: 10px;
+            }
+    
+            .user-message {
+                text-align: left;
+                background-color: #555;
+            }
+    
+            .ai-message {
+                text-align: left;
+                background-color: #666;
+            }
+            
+            .chat-name {
+                font-weight: bold; /* Make the name bold */
+                margin-bottom: 5px; /* Space between name and message */
+            }
+    
+            body {
+                position: relative;
+                background-image: url('background.jpg');
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                background-attachment: fixed; /* Ensures the background image remains fixed as the page is scrolled */
+            }
+    
+            /* Overlay Style */
+            body::after {
+                content: "";
+                display: block;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5); /* Adjust the alpha value to control the darkness (0 to 1) */
+                z-index: -1; /* Place the overlay behind the content */
+            }
+        </style>
+        <script>
+            async function sendQuery() {
+                const userInput = document.getElementById("user-input").value;
+    
+                const chatMessages = document.getElementById("chat-messages");
+
+                // Create user message
+                const userMessageContainer = document.createElement("div");
+                userMessageContainer.className = "chat-message user-message";
+    
+                const userName = document.createElement("div");
+                userName.className = "chat-name"; // Label for user name
+                userName.innerText = "YOU:"; // Name label
+    
+                const userMessage = document.createElement("div");
+                userMessage.innerText = userInput; // Message content
+    
+                // Append name and message to the user message container
+                userMessageContainer.appendChild(userName);
+                userMessageContainer.appendChild(userMessage);
+    
+                chatMessages.appendChild(userMessageContainer);
+    
+                document.getElementById("user-input").value = "";
+    
+                try {
+                    const response = await fetch('http://localhost:5000/api/get-response', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ query: userInput }),
+                    });
+    
+                    if (!response.ok) {
+                        throw new Error("Failed to get a response");
+                    }
+    
+                    const data = await response.json();
+    
+                    // Create AI message
+                    const aiMessageContainer = document.createElement("div");
+                    aiMessageContainer.className = "chat-message ai-message";
+    
+                    const aiName = document.createElement("div");
+                    aiName.className = "chat-name"; // Label for AI name
+                    aiName.innerText = "UTS BOT:"; // AI name
+    
+                    const aiMessage = document.createElement("div");
+                    aiMessage.innerText = data.text; // AI message content
+    
+                    aiMessageContainer.appendChild(aiName);
+                    aiMessageContainer.appendChild(aiMessage);
+    
+                    chatMessages.appendChild(aiMessageContainer);
+    
+                    const chatContainer = document.getElementById("chat-container");
+                    chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to the bottom to keep the latest messages in view
+                } catch (error) {
+                    console.error("Error sending query:", error);
+                    const errorMessage = document.createElement("div");
+                    errorMessage.className = "chat-message ai-message";
+                    errorMessage.innerText = "Error fetching response.";
+                    chatMessages.appendChild(errorMessage);
+                }
+            }
+
+            function setupKeyboardShortcut() {
+                document.addEventListener("keydown", function (event) {
+                    // Check if Ctrl and 'enter' are pressed together
+                    if (event.key === 'Enter') {
+                        event.preventDefault(); // Prevent default browser behavior
+                        sendQuery(); // Call the function
+                    }
+                });
+            }
+            window.onload = setupKeyboardShortcut;
+    
+        </script>
+    </head>
+    <body class="w3-black">
+
+        <!-- Icon Bar(Sidebar - hidden on small screens) -->
+        <nav class="w3-sidebar w3-bar-block w3-small w3-hide-small w3-center">
+            <!-- Avatar image in the top left corner -->
+            <img src="school.jpg" style="width:100%">
+            <a href="#" class="w3-bar-item w3-button w3-padding-large w3-black">
+                <i class="fa fa-home w3-xxlarge"></i>
+                <p>HOME</p>
+            </a>
+            
+            <a href="#about" class="w3-bar-item w3-button w3-padding-large w3-hover-black">
+                <i class="fa fa-eye w3-xxlarge"></i>
+                <p>INFO</p>
+            </a>
+        </nav>
+        
+        <!-- Navbar on small screens (Hidden on medium and large screens) -->
+        <div class="w3-top w3-hide-large w3-hide-medium" id="myNavbar">
+            <div class="w3-bar w3-black w3-opacity w3-hover-opacity-off w3-center w3-small">
+                <a href="#" class="w3-bar-item w3-button" style="width:25% !important">CHAT</a>
+                <a href="#chat" class="w3-bar-item w3-button" style="width:25% !important">CHAT</a>
+                <a href="#about" class="w3-bar-item w3-button" style="width:25% !important">INFO</a>
+                <a href="#contact" class="w3-bar-item w3-button" style="width:25% !important">CONTACT</a>
+            </div>
+        </div>
+        
+        <!-- Page Content -->
+        <div class="w3-padding-large" id="main">
+            <!-- Header / Home -->
+            <header class="w3-container w3-padding-32 w3-center " id="home">
+                <h1 class="w3-jumbo"><span class="w3-hide-small">UTS</span> CHATTING AI</h1>
+                <p>Anything you want to ask?</p>
+                <img src="robot.jpg" width="248" height="277">
+            </header>
+        
+    <!-- Chat Section -->
+    <div id="chat-container">
+        <div id="chat-messages">
+            <!-- AI and user chat messages will be dynamically added here -->
+        </div>
+        <div>
+        <input type="text" id="user-input" placeholder="Type your message (up to 100 words)">
+        <button onclick="sendQuery()">Send</button>
+
+        </div>
+    </div>
+
+    <!-- About Section -->
+    <div class="w3-content w3-justify w3-text-white w3-padding-64" id="about">
+        <h2 class="w3-text-light-grey">UNIVERSITY TECHNOLOGY OF SARAWAK</h2>
+        <hr style="width:200px" class="w3-opacity">
+        <p>Welcome to University of Technology Sarawak (UTS), one of the new breed of technological based universities in the country. Founded in 2013, UTS is the only university which is wholly owned by the Sarawak State Government.
+
+        Located in the heart of Borneo, UTS offers a broad range of professional and industry-linked academic programmes that are relevant to the unique requirements of Sarawak in particular and Malaysia in general. Therefore, we are proud to be recognized as the only “home-grown” TVET university in Sarawak with the aim to produce an educated and highly skilled human capital for the new and emerging industries.
+
+        UTS also prides itself as the only university in the world being awarded the prestigious Platinum ratings in Green Building Index (GBI) for its campus design in promoting sustainability in the built environment and energy utilization. The campus design is very impressive, stunningly beautiful and remarkably spectacular. This modern setting within the enclosure of the rainforest and nature will provide the most conducive learning environment for our students.
+
+        The University has invested heavily in teaching-learning facilities, especially state-of-the-art laboratories equipment, ICT infrastructure and services, and other resources for research and development (R&D). Our R&D activities are very closely linked and collaborated with industry partners and government agencies.
+
+        In recent years we have been embarking on our internationalization programmes to include student mobility, staff exchange, academic articulation arrangement and joint research projects with universities from United Kingdom, Australia, Europe, Japan, China, Korea, Taiwan, India and ASEAN countries.
+
+        We would like to welcome you and to be part of this energetic and highly motivated campus community that will unleash your full potential to realize your dreams.
+        </p>
+    </div>
+
+    <!-- Contact Section -->
+    <div class="w3-padding-64 w3-content w3-text-white" id="contact">
+        <h2 class="w3-text-light-grey">Contact Me</h2>
+        <hr style="width:200px" class="w3-opacity">
+        <div class="w3-section">
+            <p><i class="fa fa-map-marker fa-fw w3-text-white w3-xxlarge w3-margin-right"></i>  1, Jalan University, 96000 Sibu, Sarawak</p>
+            <p><i class="fa fa-phone fa-fw w3-text-white w3-xxlarge w3-margin-right"></i> Phone: 084-367 300</p>
+            <p><i class="fa fa-envelope fa-fw w3-text-white w3-xxlarge w3-margin-right"> </i> Email: enquiry@uts.edu.my</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>Powered by group HACT</p>
+    </footer>
+</div>
+</body>
+</html>
