@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            display: flex;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+            background-color: #F4F4F8;
+        }
+        /* Sidebar styles */
+        .sidebar {
+            width: 250px;
+            background-color: #1E1E2C;
+            color: #FFFFFF;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 94vh;
+            overflow: hidden;
+        }
+        /* Make the sidebar content below the line scrollable */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            height: 94vh; 
+            overflow: hidden; /* Prevent the entire sidebar from scrolling */
+        }
+
+        .chat-titles-container {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+            scrollbar-width: thin;
+        }
+
+        .chat-titles-container::-webkit-scrollbar {
+            width: 6px; 
+        }
+
+        .chat-titles-container::-webkit-scrollbar-thumb {
+            background-color: #FFD700;
+            border-radius: 8px;
+        }
+
+        .chat-titles-container::-webkit-scrollbar-track {
+            background-color: #28293E; 
+        }
+        .sidebar h1 {
+            font-size: 1.5em;
+            margin-bottom: 30px;
+            color: #FFD700;
+        }
+        .sidebar a {
+            color: #FFFFFF;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            margin: 3px 0;
+            font-size: 1.1em;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .sidebar a:hover {
+            background-color: #28293E;
+        }
+        .sidebar a i {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        .sidebar .line {
+            border-top: 1px solid #666666;
+            margin: 20px 0;
+        }
+        .new-chat {
+            display: flex;
+            align-items: center;
+            background-color: #28293E;
+            color: #FFD700;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        .new-chat i {
+            margin-right: 17px;
+        }
+        /* Content styles */
+        .content {
+            flex: 1;
+            padding: 20px;
+            background-color: #F4F4F8;
+            transition: margin-left 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .chat-title {
+            display: none; /* Initially hidden */
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px;
+            text-align: left;
+        }
+        /* Initial dialog box */
+        .startup-dialog {
+            display: flex;
+            align-items: center;
+            background-color: #FFFFFF;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .startup-dialog i {
+            font-size: 2em;
+            color: #FFD700;
+            margin-right: 15px;
+        }
+        .startup-dialog p {
+            font-size: 1.2em;
+            color: #333333;
+        }
+        /* Chat history styles */
+        .chat-history {
+            width: 60%;
+            max-width: 800px;
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .chat-message {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .chat-message.user {
+            justify-content: flex-end;
+        }
+        .chat-message .message-bubble {
+            background-color: #CCCCCC;
+            color: rgb(0, 0, 0);
+            padding: 10px;
+            border-radius: 15px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+        .chat-message.assistant .message-bubble {
+            background-color: #28293E;
+            color: white;
+        }
+        .chat-message + .chat-message {
+            margin-top: 20px;
+        }
+        /* Loading spinner */
+        .loader {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #FFD700; 
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Input area styles */
+        .input-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            bottom: 40px;
+            width: 60%;
+            max-width: 800px;
+            border: 1px solid #CCCCCC;
+            border-radius: 25px;
+            background-color: #FFFFFF;
+            padding: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .input-area i {
+            font-size: 1.5em;
+            color: #cccccc;
+            cursor: pointer;
+            padding: 0 10px;
+        }
+        .input-field {
+            flex: 1;
+            border: none;
+            padding: 10px;
+            font-size: 1em;
+            outline: none;
+        }
+        .submit-button {
+            background: none;
+            border: none;
+            color: #FFD700;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 0 10px;
+        }
+
+        /* Upload pdf Modal  */
+        .file-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-upload {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 450px;
+            height: 150px;
+            text-align: left;
+            position: relative;
+        }
+        .select-files-label {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .message {
+            font-size: 1em;
+            margin-bottom: 20px;
+            color: #FF6347;
+        }
+        .upload-button {
+            background-color: #FFD700;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+        }
+        .close-pdf-modal {
+            background-color: #28293E;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+        }
+
+        /* Styles for the dropdown icon and menu */
+        .dropdown {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+        }
+
+        .dropdown i {
+            font-size: 2em;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #fff;
+            min-width: 160px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            right: 0;
+            top: 40px;
+        }
+
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            font-size: 1.1em;
+            border-radius: 5px;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #ddd;
+        }
+
+        /* Upgrade modal style */
+        #upgradePlanModal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%; 
+            max-width: 1200px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            padding: 90px 40px 40px 70px; 
+            z-index: 1000;
+            display: none; /* Hidden by default */
+            flex-direction: column; /* Stacking items vertically */
+        }
+
+        /* h3, h4, h5, and h6 font style */
+        #upgradePlanModal h3,
+        #upgradePlanModal h4,
+        #upgradePlanModal h5,
+        #upgradePlanModal h6 {
+            font-family: 'Arial', sans-serif;
+            font-size: 1.2rem; 
+            font-weight: bold; 
+            color: black; 
+        /* Equal block size */
+            margin: 10px 0;
+            padding: 8px;
+            height: auto; 
+            line-height: 1.5; 
+            width: 80%; 
+            box-sizing: border-box;
+        }
+
+
+        /* Font for Paragraphs (p) */
+        #upgradePlanModal p {
+            font-family: 'Verdana', sans-serif; 
+            font-size: 0.9rem; 
+            font-weight: normal; 
+            line-height: 1.5; 
+            color: black; 
+        }
+
+        /* Font for List Items (li) */
+        #upgradePlanModal li {
+            font-family: 'Tahoma', sans-serif; 
+            font-size: 0.9rem; 
+            font-weight: normal;
+            color: black;
+            margin: 8px 0; 
+        }
+
+        /* UpgradePlan heading */
+        #upgradePlanModal h2 {
+            position: absolute; 
+            top: -10px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            text-align: center;
+            background-color: #FFD700;
+            border-radius: 10px;
+            padding: 5px 10px; 
+            z-index: 1;
+        }
+
+
+        /* Container for Free and Premium tiers */
+        .tiers-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 40px;
+        }
+
+        /* Styling for the new container */
+        .additional-options {
+            display: flex;
+            justify-content: space-between;
+            gap: 70px;
+            margin-top: 120px; /* Push to the bottom */
+        }
+    
+        /* Style for Free tier */
+        .free-tier {
+            flex: 1;
+            text-align: left;
+            padding: 10px;
+            background-color: #f8f9fa; 
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: normal;
+        }
+
+        /* Style for Premium tier */
+        .premium-tier {
+            flex: 1;
+            text-align: left;
+            padding: 10px;
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: normal;
+        }
+
+        .plan ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .plan li {
+            margin: 10px 0;
+            line-height: 1.5;
+            font-size: 1.2em;
+            font-weight: normal;
+        }
+    
+
+        /* General style for addtional options */
+        .ad-removal, .institutional-licensing {
+            padding: 15px;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            background-color: #fff3cd;
+            font-size: 1.1em;
+            font-weight: normal;
+        }
+
+        /* Link styling in Institutional Licensing */
+        .institutional-licensing a {
+            color: #007bff;
+            text-decoration: underline; 
+            font-weight: bold;
+        }
+
+        .institutional-licensing a:hover {
+            color: #0056b3; /* Darker shade on hover */
+            text-decoration: none;
+        }
+
+
+
+        /* Close button style */
+        .close-plan-modal {
+            position: absolute;
+            top: 10px; 
+            right: 10px; 
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .close-plan-modal:hover {
+            color: #ff0000;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Triple Dot Icon and Dropdown Menu -->
+    <div class="dropdown">
+        <i class="fas fa-ellipsis-h" onclick="toggleDropdown()"></i>
+        <div class="dropdown-content" id="dropdownMenu">
+            <a href="#settings">Settings</a>
+            <a href="#" onclick="openUpgradePlan()">Upgrade Plan</a>
+        </div>
+    </div>
+
+        <!-- Pop-Out Page -->
+        <div id="upgradePlanModal">
+            <button class="close-plan-modal" onclick="closeUpgradePlanModal()">×</button>
+            <h2>Upgrade Plan</h2>
+            <div class="tiers-container">
+                <div class="free-tier">
+                    <h3>Free Tier</h3>
+                    <p>Free with ad-supported access to basic scheduling and notes features.</p>
+                </div>
+
+                <div class="premium-tier">
+                    <h4>Premium Tier</h4>
+                    <ul>
+                    <li><b>Monthly Subscription:</b> MYR 8–12 per month</li>
+                    <li><b>Annual Subscription:</b> MYR 80–100 per year (approx. MYR 6–8/month, saving 30% compared to monthly)</li>
+                    <li>Ad-free access</li>
+                    <li>Advanced scheduling</li>
+                    <li>Unlimited AI-powered note summaries</li>
+                    <li>Personalized study recommendations</li>
+                    </ul>
+                </div>
+            </div>
+
+    
+            <!-- New container for h5 and h6 -->
+            <div class="additional-options">
+                <div class="ad-removal">
+                    <h5>Ad Removal Pack</h5>
+                    <p>MYR 2–4 for a one-time purchase to remove ads for a specified period (e.g., 30 days).</p>
+                </div>
+
+                <div class="institutional-licensing">
+                    <h6>Institutional Licensing</h6>
+                    <p>Discounted rates for schools and universities, at around MYR 50–80 per student annually. Verify your student email 
+                        <a href="#" style="text-decoration: underline;">here</a>.</p>
+                </div>
+            </div>
+        </div>
+    
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <h1>AI Assistant</h1>
+        
+        <!-- New Chat Button -->
+        <div class="new-chat" onclick="startNewChat()">
+            <i class="fas fa-plus"></i>
+            <span>New Chat</span>
+        </div>
+        
+        <!-- Sidebar Links -->
+        <a href="#home"><i class="fas fa-home"></i>Home</a>
+        <a href="#calendar"><i class="fas fa-calendar-alt"></i>Calendar</a>
+        <a href="#search"><i class="fas fa-search"></i>Search</a>
+        
+        <!-- Line below Search -->
+        <div class="line"></div>    
+
+         <!-- Chat Titles Display -->
+        <div class="chat-titles-container" id="chatTitles"></div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="content">
+        <!-- Chat Title Display -->    <!-- NEW  -->
+        <div class="chat-title" id="currentChatTitle">
+        </div>
+
+        <!-- Startup dialog layout -->
+        <div class="startup-dialog" id="startupDialog">
+            <i class="fas fa-user"></i>  <!-- AI greeting placeholder -->
+            <p>Hi! How may I help you?</p>
+        </div>
+        
+        <!-- Chat history -->
+        <div class="chat-history" id="chatHistory"></div>
+        
+        <!-- Input area at the bottom center -->
+        <div class="input-area">
+            <i class="fas fa-paperclip" onclick="attachFile()"></i>
+            <input type="text" class="input-field" placeholder="Ask AI..." id="messageInput">
+            <button class="submit-button" onclick="submitMessage()">
+                <i class="fas fa-arrow-circle-up"></i>
+            </button>
+        </div>
+        <!-- Loading spinner -->
+        <div class="loader" id="loader" style="display: none;"></div>
+
+    </div>
+
+    <!-- Modal for file attachment -->
+    <div class="file-modal" id="fileModal">
+        <div class="modal-upload">
+            <div class="select-files-label">Select a file</div>
+            <div class="message">Only PDF files can be selected.</div>
+            <input type="file" id="fileInput" accept="application/pdf">
+            <button class="close-pdf-modal" onclick="closeFileModal()">Close</button>
+            <button class="upload-button" onclick="uploadFile()">Upload</button>
+        </div>
+    </div>
+
+    <script>
+        let newChatButtonClicks = 0;  // Track the number of times the New Chat button is clicked
+
+        function startNewChat() {
+                // Reset chat state if it's currently active
+            if (isActiveChat) {
+            alert("New chat already created.");
+            return;
+            }
+
+            // Create a new chat title by finding the next available Chat number
+            const newChatNumber = getNextChatNumber();
+            currentChatTitle = `Chat #${newChatNumber}`;
+            chatHistory = [];
+            isFirstMessage = true;
+            isActiveChat = true;
+
+            // Reset the chat interface
+            document.getElementById('chatHistory').innerHTML = '';
+            document.getElementById('currentChatTitle').style.display = 'none'; // Hide chat title initially
+            document.getElementById('startupDialog').style.display = 'block'; // Show the startup dialog
+
+            // Save the new chat state
+            saveCurrentChat();
+
+            // Display the updated chat titles
+            displayChatTitles();
+        }
+
+        // Function to display chat title and update content    //NEW
+        function loadChat(chatTitle) {
+            if (isActiveChat) {
+
+                // If we are loading an existing chat, reset the new chat flag
+                isActiveChat = false;
+            }
+            
+            currentChatTitle = chatTitle;
+            chatHistory = JSON.parse(sessionStorage.getItem(chatTitle)) || [];
+            displayChatHistory();
+            displayChatTitles(); // Re-display the titles with updated order
+            displayChatTitle(chatTitle); // Update the chat title in the content area
+        }
+
+        function displayChatTitle(title) {
+            const chatTitleElement = document.getElementById("currentChatTitle");
+            const startupDialog = document.getElementById("startupDialog");
+
+            // Set the chat title text
+            chatTitleElement.textContent = title;
+
+            // Show the chat title
+            chatTitleElement.style.display = "block";
+
+            // Hide the startup dialog
+            startupDialog.style.display = "none";
+        }
+
+
+        // Chat title history and conversation storage
+        let chatHistory = [];
+        let currentChatTitle = 'Chat #1';
+        let isFirstMessage = true;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            displayChatTitles();
+            loadChatTitlesFromStorage();
+        });
+        
+        let isNewChatCreated = false; //Track current active chat
+
+        function startNewChat() {
+            if (isNewChatCreated) {
+                alert("New chat was already created.");
+                return;
+            }
+
+            // Create a new chat title by finding the next available Chat number
+            const newChatNumber = getNextChatNumber();
+            currentChatTitle = `Chat #${newChatNumber}`;
+            chatHistory = [];
+            isFirstMessage = true;
+            isActiveChat = true;
+            isNewChatCreated = true;
+
+            document.getElementById('chatHistory').innerHTML = '';
+            document.getElementById('currentChatTitle').style.display = 'none'; // Hide chat title initially
+            document.getElementById('startupDialog').style.display = 'block'; // Show the startup dialog
+            saveCurrentChat(); // Save the new chat after creation
+            displayChatTitles();
+        }
+
+        function getNextChatNumber() {
+            const titles = Object.keys(sessionStorage)
+            .filter(key => key.startsWith('Chat #'))
+            .map(key => parseInt(key.split('#')[1]))
+            .sort((a, b) => a - b);
+            // Find the next available Chat number
+            for (let i = 1; i <= titles.length + 1; i++) {
+                if (!titles.includes(i)) {
+                    return i;
+                }
+            }
+            return 1; // Default to Chat #1 if no chats exist
+        }
+
+        function saveCurrentChat() {
+            sessionStorage.setItem(currentChatTitle, JSON.stringify(chatHistory));
+            moveChatToTop(currentChatTitle);  // Move the updated chat to the top
+            displayChatTitles();
+        }
+
+        function loadChatTitlesFromStorage() {
+            const titles = Object.keys(sessionStorage).filter(key => key.startsWith('Chat #')).sort();
+            if (titles.length === 0) {
+                currentChatTitle = 'Chat #1';
+                chatHistory = [];
+            }
+
+            //if (titles.length > 0) {
+                //currentChatTitle = titles[titles.length - 1]; // Load the most recent chat
+                //chatHistory = JSON.parse(sessionStorage.getItem(currentChatTitle)) || [];
+            //} else {
+                //startNewChat(); // Start new chat if nothing is stored
+            }
+        //}
+
+        function moveChatToTop(chatTitle) {
+            const titles = Object.keys(sessionStorage).filter(key => key.startsWith('Chat #')).sort();
+            // Remove the chatTitle from the list temporarily
+            const index = titles.indexOf(chatTitle);
+            if (index > -1) titles.splice(index, 1);
+
+            // Add the updated chatTitle back to the top
+            titles.unshift(chatTitle);
+
+            // Re-order the sessionStorage based on this updated order
+            const reorderedStorage = {};
+            titles.forEach(title => {
+                reorderedStorage[title] = sessionStorage.getItem(title);
+            });
+
+            // Clear the storage and re-save in the updated order
+            sessionStorage.clear();
+            Object.keys(reorderedStorage).forEach(title => {
+                sessionStorage.setItem(title, reorderedStorage[title]);
+            });
+        }
+
+        function displayChatTitles() {
+            const chatTitlesContainer = document.getElementById('chatTitles');
+            chatTitlesContainer.innerHTML = '';
+
+            // Get all chat titles, sort them, and ensure the updated one is on top
+            const titles = Object.keys(sessionStorage).filter(key => key.startsWith('Chat #')).sort();
+            titles.reverse(); // Reverse the order so the most recently updated chat is at the top
+
+            titles.forEach((key) => {
+                const chatLink = document.createElement('a');
+                chatLink.textContent = key;
+                chatLink.href = "#";
+                chatLink.onclick = () => loadChat(key);
+        
+                // Highlight the active chat
+                if (key === currentChatTitle) {
+                        chatLink.style.fontWeight = 'bold';
+                        chatLink.style.backgroundColor = '#FFD700';
+                        chatLink.style.color = '#1E1E2C';
+                    }
+                    
+                chatTitlesContainer.appendChild(chatLink);
+            });
+        }
+
+        function displayChatHistory() {
+            const chatHistoryElement = document.getElementById('chatHistory');
+            chatHistoryElement.innerHTML = '';
+            chatHistory.forEach((entry) => {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('chat-message', entry.sender);
+                const messageBubble = document.createElement('div');
+                messageBubble.classList.add('message-bubble');
+                messageBubble.textContent = entry.message;
+                if (entry.sender === 'user') messageBubble.style.color = 'black'; // User message color
+                messageElement.appendChild(messageBubble);
+                chatHistoryElement.appendChild(messageElement);
+            });
+            chatHistoryElement.scrollTop = chatHistoryElement.scrollHeight;
+        }
+        
+        // Show the loading spinner
+        function showLoadingSpinner() {
+            document.getElementById('loadingSpinner').style.display = 'block';
+        }
+
+        // Hide the loading spinner
+        function hideLoadingSpinner() {
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }
+
+        function submitMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value;
+
+            if (message.trim()) {
+                addMessageToChatHistory(message, 'user');
+                
+                
+
+                setTimeout(() => {
+                    addMessageToChatHistory('This is an assistant response.', 'assistant');
+                }, 1000);
+
+                if (isFirstMessage) {
+                    // Hide the startup dialog
+                    document.getElementById('startupDialog').style.display = 'none';
+
+                    // Show the chat title for the new chat
+                    displayChatTitle(currentChatTitle);
+
+                    isFirstMessage = false; // Mark that the first message has been sent
+                    isActiveChat = false;   // Optionally, reset this if you want to allow new chat after the first message
+                    isNewChatCreated = false;
+                    saveCurrentChat(); // Save the chat after the first message
+                }
+                
+                
+
+                // Clear the input field
+                messageInput.value = '';
+            }
+                
+        }
+
+
+        function addMessageToChatHistory(message, sender) {
+            chatHistory.push({ sender, message });
+
+            saveCurrentChat(); // Save chat history every time a new message is added
+            displayChatHistory();
+            displayChatTitles();
+        }
+
+    
+        // Toggle dropdown visibility
+        function toggleDropdown() {
+            const dropdownMenu = document.getElementById('dropdownMenu');
+            dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+        }
+        
+        // Open Upgrade Plan Modal
+        function openUpgradePlan() {
+            const modal = document.getElementById('upgradePlanModal');
+            modal.style.display = 'flex'; // Show as flex for centering
+        }
+
+        // Close Upgrade Plan Modal
+        function closeUpgradePlanModal() {
+            const modal = document.getElementById('upgradePlanModal');
+            modal.style.display = 'none';
+        }
+
+        // Close modal on outside click
+        window.onclick = function (event) {
+            const modal = document.getElementById('upgradePlanModal');
+        if (event.target === modal) {
+            closeUpgradePlanModal();
+         }
+        };
+
+        // Close dropdown if clicked outside
+        window.addEventListener("click", function(event) {
+            if (!event.target.closest('.dropdown i')) {
+                document.getElementById('dropdownMenu').style.display = 'none';
+            }
+        });
+    
+        // Show and close file modal
+        function attachFile() { document.getElementById('fileModal').style.display = 'flex'; }
+        function closeFileModal() { document.getElementById('fileModal').style.display = 'none'; }
+        function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput.files.length > 0) alert('File uploaded!');
+            closeFileModal();
+        }
+    
+        document.getElementById('messageInput').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                submitMessage();
+            }
+        });
+    </script>
+    
+
+</body>
+</html>
